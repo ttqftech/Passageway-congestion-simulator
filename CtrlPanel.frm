@@ -68,7 +68,7 @@ Begin VB.Form CtrlPanel
          Left            =   120
          MaxLength       =   3
          TabIndex        =   9
-         Text            =   "40"
+         Text            =   "5"
          Top             =   240
          Width           =   852
       End
@@ -85,7 +85,7 @@ Begin VB.Form CtrlPanel
          Left            =   120
          MaxLength       =   3
          TabIndex        =   7
-         Text            =   "640"
+         Text            =   "320"
          Top             =   240
          Width           =   852
       End
@@ -135,7 +135,7 @@ Begin VB.Form CtrlPanel
          Left            =   120
          MaxLength       =   3
          TabIndex        =   1
-         Text            =   "20"
+         Text            =   "40"
          Top             =   240
          Width           =   852
       End
