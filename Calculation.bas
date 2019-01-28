@@ -1,11 +1,12 @@
 Attribute VB_Name = "Caluculation"
 Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+Public Declare Function GetTickCount Lib "kernel32" () As Long
 Public Type POINT
     X As Double
     Y As Double
 End Type
 
-Private Const PI = 3.14159265358979
+Public Const PI = 3.14159265358979
 
 Public Function isNumeric(text As String) As Boolean
     On Error GoTo err:

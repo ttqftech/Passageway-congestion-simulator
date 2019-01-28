@@ -6,19 +6,38 @@ Begin VB.Form Simulator
    ClientHeight    =   2436
    ClientLeft      =   36
    ClientTop       =   384
-   ClientWidth     =   3744
+   ClientWidth     =   3984
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
    ScaleHeight     =   203
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   312
+   ScaleWidth      =   332
    StartUpPosition =   3  '窗口缺省
    Begin VB.Timer Mover 
       Enabled         =   0   'False
-      Interval        =   150
+      Interval        =   1
       Left            =   1800
       Top             =   0
+   End
+   Begin VB.Label fps 
+      BackStyle       =   0  'Transparent
+      Caption         =   "fps:"
+      BeginProperty Font 
+         Name            =   "DejaVu Sans Mono"
+         Size            =   10.2
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00000000&
+      Height          =   252
+      Left            =   120
+      TabIndex        =   0
+      Top             =   240
+      Width           =   3732
    End
    Begin VB.Shape Person 
       BorderColor     =   &H0041D900&
@@ -27,7 +46,7 @@ Begin VB.Form Simulator
       FillStyle       =   0  'Solid
       Height          =   372
       Index           =   0
-      Left            =   3360
+      Left            =   3600
       Shape           =   3  'Circle
       Top             =   0
       Visible         =   0   'False
@@ -35,7 +54,7 @@ Begin VB.Form Simulator
    End
    Begin VB.Line RightEnd 
       BorderColor     =   &H00000000&
-      BorderWidth     =   10
+      BorderWidth     =   8
       X1              =   90
       X2              =   140
       Y1              =   20
@@ -43,7 +62,7 @@ Begin VB.Form Simulator
    End
    Begin VB.Line LeftEnd 
       BorderColor     =   &H00000000&
-      BorderWidth     =   10
+      BorderWidth     =   8
       X1              =   60
       X2              =   10
       Y1              =   20
@@ -80,11 +99,12 @@ Private SectorRadius As Integer
 Private PersonCount As Integer
 Private WalkSpeed As Double
 Private ShakeSpeed As Double
-'Private Center As POINT
 Private ViewCenter As POINT
 Private FieldWidth As Double
 Private Fieldheight As Double
 Private realPoint() As POINT
+
+Private lastTime As Long
 
 Private Sub Form_Unload(Cancel As Integer)
     End
@@ -121,6 +141,7 @@ Public Sub Start(HumanRadius_ As Integer, PsgwayWidth_ As Integer, MaxAngle_ As 
     Next
     refreshDisplay
     Mover.Enabled = True
+    lastTime = GetTickCount     '搞 fps 的
 End Sub
 
 '初始化人员位置时判断有没有出界
@@ -141,8 +162,8 @@ End Function
 Private Sub refreshDisplay()
     For i = 1 To UBound(realPoint)
         Person(i).Move realPoint(i).X - HumanRadius + ViewCenter.X, realPoint(i).Y - HumanRadius + ViewCenter.Y
-        DoEvents
-        'Sleep 400
+        'DoEvents
+        'Sleep 300
     Next
 End Sub
 
@@ -153,63 +174,91 @@ Private Function calcForce(ByVal index As Integer) As POINT
     For i = 1 To UBound(realPoint)          '遍历所有人，找有没有碰的
         If index <> i Then
             d = Sqr((realPoint(i).X - realPoint(index).X) ^ 2 + (realPoint(i).Y - realPoint(index).Y) ^ 2)
-            depth = HumanRadius * 2 - d    '嵌进去的深度
+            depth = HumanRadius * 2 - d     '嵌进去的深度
             If depth > 0 Then               '发生碰撞
                 direction = Atn((realPoint(i).Y - realPoint(index).Y) / (realPoint(i).X - realPoint(index).X))
-                'Debug.Print Round(depth, 2), Round(RadianToAngle(direction), 1), Round(realPoint(i).Y - realPoint(index).Y, 1), Round(realPoint(i).X - realPoint(index).X, 1)
                 If (realPoint(i).X - realPoint(index).X) < 0 Then direction = direction + 180   'arctan 要分象限使用
-                calcForce.X = calcForce.X - Cos(direction) * WalkSpeed * depth / HumanRadius
-                calcForce.Y = calcForce.Y - Sin(direction) * WalkSpeed * depth / HumanRadius
+                calcForce.X = calcForce.X - Cos(direction) * WalkSpeed * depth / HumanRadius * 2
+                calcForce.Y = calcForce.Y - Sin(direction) * WalkSpeed * depth / HumanRadius * 2
             End If
         End If
     Next
     'Debug.Print ""
     Dim A As Double, B As Double, C As Double, k As Double
-    '计算左边界，一元一次方程两点式转一般式算法，废弃
-    'A = (-LeftEnd.Y2) - (-LeftEnd.Y1)
-    'B = LeftEnd.X1 - LeftEnd.X2
-    'C = LeftEnd.X2 * (-LeftEnd.Y1) - LeftEnd.X1 * (-LeftEnd.Y2)
+    '计算左边界，一元一次方程点斜式转一般式算法
     k = -Atn(AngleToRadian(90 - MaxAngle / 2))
     A = k
     B = -1
-    C = k * SectorRadius * Sin(AngleToRadian(MaxAngle) / 2) + 0     ' C = -ka + b ，这里选用 y 轴为 0 的点
-    'Debug.Print A, B, C
+    C = -k * (-PsgwayWidth / 2) + 0    ' C = -ka + b ，这里选用 y 轴为 0 的点
     d = Abs(A * realPoint(index).X + B * realPoint(index).Y + C) / Sqr(A ^ 2 + B ^ 2)       '点到直线距离
     depth = HumanRadius - d
-    Debug.Print depth
-    'Person(index).FillColor = red
-    'DoEvents
     If depth > 0 Then
-        direction = Atn(B / A)      '这里求的是垂线的角度，所以取了倒数
-        calcForce.X = calcForce.X - Cos(direction) * WalkSpeed * depth / HumanRadius
-        calcForce.Y = calcForce.Y - Sin(direction) * WalkSpeed * depth / HumanRadius
+        If realPoint(index).Y - d * Sin(AngleToRadian(MaxAngle / 2)) > 0 Then
+            direction = -1 / Atn(k)       '这里求的是垂线的角度，所以取了相反倒数
+            calcForce.X = calcForce.X + Cos(direction) * WalkSpeed * depth * 2
+            calcForce.Y = calcForce.Y + Sin(direction) * WalkSpeed * depth * 2
+        End If
     End If
-'    '计算右边界，一元一次方程两点式转一般式算法
-'    A = (-RightEnd.Y2) - (-RightEnd.Y1)
-'    B = RightEnd.X1 - RightEnd.X2
-'    C = RightEnd.X2 * (-RightEnd.Y1) - RightEnd.X1 * (-RightEnd.Y2)
-'    d = Abs(A * realPoint(index).X + B * realPoint(i).Y + C) / Sqr(A ^ 2 + B ^ 2)       '点到直线距离
-'    depth = HumanRadius - d
-'    If depth > 0 Then
-'        direction = Atn(B / A)      '这里求的是垂线的角度，所以取了倒数
-'        calcForce.X = calcForce.X - Cos(direction) * WalkSpeed * depth / HumanRadius
-'        calcForce.Y = calcForce.Y - Sin(direction) * WalkSpeed * depth / HumanRadius
-'    End If
+    '计算右边界，一元一次方程点斜式转一般式算法
+    k = Atn(AngleToRadian(90 - MaxAngle / 2))
+    A = k
+    B = -1
+    C = -k * (PsgwayWidth / 2) + 0    ' C = -ka + b ，这里选用 y 轴为 0 的点
+    d = Abs(A * realPoint(index).X + B * realPoint(index).Y + C) / Sqr(A ^ 2 + B ^ 2)       '点到直线距离
+    depth = HumanRadius - d
+    If depth > 0 Then
+        If realPoint(index).Y - d * Sin(AngleToRadian(MaxAngle / 2)) > 0 Then
+            direction = 1 / Atn(k)     '这里求的是垂线的角度，所以取了倒相反数，这里的射线方向是与向左相反的，所以反多一次
+            calcForce.X = calcForce.X + Cos(direction) * WalkSpeed * depth * 2
+            calcForce.Y = calcForce.Y + Sin(direction) * WalkSpeed * depth * 2
+        End If
+    End If
+End Function
+
+Private Function walkForward(ByVal index As Integer) As POINT
+    Dim direction As Double
+    direction = Atn(realPoint(index).Y / realPoint(index).X)
+    If realPoint(index).X > 0 Then direction = direction + PI  'arctan 要分象限使用
+    'Debug.Print RadianToAngle(direction)
+    walkForward.X = walkForward.X + Cos(direction) * WalkSpeed
+    walkForward.Y = walkForward.Y + Sin(direction) * WalkSpeed
 End Function
 
 Private Sub Mover_Timer()
+    Dim deltaTime As Long               '用于平衡 fps 带来的速度差异
+    deltaTime = GetTickCount - lastTime
+    If deltaTime < 16 Then Exit Sub     '粗略限制帧速
+    Dim speedMultiply As Single
+    speedMultiply = deltaTime / 16.6667 '以 60 fps 为基准
+    Static deltaTimeSum As Long
+    If deltaTimeSum >= 333 Then
+        fps = "fps: " & Round(1000 / deltaTime, 1) & "  speedMultiply: " & Round(speedMultiply, 1) & "×"
+        If speedMultiply >= 4 Then fps.ForeColor = vbRed Else fps.ForeColor = vbBlack
+        deltaTimeSum = 0
+    Else
+        deltaTimeSum = deltaTimeSum + deltaTime
+    End If
+    lastTime = GetTickCount
     ReDim nextPoint(UBound(realPoint)) As POINT
     For i = 1 To UBound(realPoint)
-        Dim movement As POINT
-        movement = calcForce(i)
-        nextPoint(i).X = realPoint(i).X + movement.X
-        nextPoint(i).Y = realPoint(i).Y + movement.Y
+        If realPoint(i).Y > 0 Then
+            Dim movement As POINT
+            movement = calcForce(i)
+            nextPoint(i).X = realPoint(i).X + movement.X * speedMultiply  '以 60 fps 为基准
+            nextPoint(i).Y = realPoint(i).Y + movement.Y * speedMultiply
+            movement = walkForward(i)
+            nextPoint(i).X = nextPoint(i).X + movement.X
+            nextPoint(i).Y = nextPoint(i).Y + movement.Y
+        Else                        '到出口了
+            nextPoint(i).Y = realPoint(i).Y - WalkSpeed
+            nextPoint(i).X = realPoint(i).X
+        End If
     Next
     For i = 1 To UBound(realPoint)
         realPoint(i) = nextPoint(i)
     Next
     refreshDisplay
-    Debug.Print "========================="
+    'Debug.Print "========================="
 End Sub
 
 

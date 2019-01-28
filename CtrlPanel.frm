@@ -51,7 +51,7 @@ Begin VB.Form CtrlPanel
          Left            =   120
          MaxLength       =   3
          TabIndex        =   11
-         Text            =   "1.0"
+         Text            =   "2.0"
          Top             =   240
          Width           =   852
       End
@@ -85,7 +85,7 @@ Begin VB.Form CtrlPanel
          Left            =   120
          MaxLength       =   3
          TabIndex        =   7
-         Text            =   "320"
+         Text            =   "720"
          Top             =   240
          Width           =   852
       End
@@ -115,10 +115,11 @@ Begin VB.Form CtrlPanel
       Top             =   120
       Width           =   1092
       Begin VB.TextBox PsgwayWidth 
+         ForeColor       =   &H00000000&
          Height          =   264
          Left            =   120
          TabIndex        =   3
-         Text            =   "60"
+         Text            =   "80"
          Top             =   240
          Width           =   852
       End
@@ -135,7 +136,7 @@ Begin VB.Form CtrlPanel
          Left            =   120
          MaxLength       =   3
          TabIndex        =   1
-         Text            =   "40"
+         Text            =   "20"
          Top             =   240
          Width           =   852
       End
@@ -162,7 +163,9 @@ Private Sub Form_Load()
     PersonCount_prev = PersonCount
     WalkSpeed_prev = WalkSpeed
     ShakeSpeed_prev = ShakeSpeed
+    Me.Move 32, 32
     Simulator.Show
+    Simulator.Move Me.Left + Me.Width, Me.Top
     RefreshSimulator
 End Sub
 Private Sub Form_Unload(Cancel As Integer)
@@ -255,25 +258,28 @@ End Sub
 
 
 Private Sub RefreshSimulator()
-    Simulator.Width = (SectorRadius * Sin(AngleToRadian(MaxAngle) / 2) * 2 + PsgwayWidth) * Screen.TwipsPerPixelX
-    Simulator.Height = (HumanRadius * 3 + SectorRadius + 64) * Screen.TwipsPerPixelY
-    
-    Simulator.LeftWall.Left = 0
-    Simulator.LeftWall.Width = SectorRadius * Sin(AngleToRadian(MaxAngle) / 2)
-    Simulator.RightWall.Width = SectorRadius * Sin(AngleToRadian(MaxAngle) / 2)
-    Simulator.RightWall.Left = Simulator.ScaleWidth - Simulator.RightWall.Width
-    
-    Simulator.LeftWall.Height = HumanRadius * 3
-    Simulator.RightWall.Height = HumanRadius * 3
-    
-    Simulator.LeftEnd.Y1 = Simulator.LeftWall.Height
-    Simulator.RightEnd.Y1 = Simulator.RightWall.Height
-    Simulator.LeftEnd.X1 = Simulator.LeftWall.Width
-    Simulator.RightEnd.X1 = Simulator.RightWall.Left
-    Simulator.LeftEnd.X2 = 0
-    Simulator.RightEnd.X2 = Simulator.ScaleWidth
-    Simulator.LeftEnd.Y2 = SectorRadius * Cos(AngleToRadian(MaxAngle) / 2) + Simulator.LeftWall.Height
-    Simulator.RightEnd.Y2 = SectorRadius * Cos(AngleToRadian(MaxAngle) / 2) + Simulator.LeftWall.Height
+    With Simulator
+        .Width = (SectorRadius * Sin(AngleToRadian(MaxAngle) / 2) * 2 + PsgwayWidth) * Screen.TwipsPerPixelX
+        .Height = (HumanRadius * 3 + SectorRadius + 64) * Screen.TwipsPerPixelY
+        
+        .LeftWall.Left = 0
+        .LeftWall.Width = SectorRadius * Sin(AngleToRadian(MaxAngle) / 2)
+        .RightWall.Width = SectorRadius * Sin(AngleToRadian(MaxAngle) / 2)
+        .RightWall.Left = .ScaleWidth - .RightWall.Width
+        
+        .LeftWall.Height = HumanRadius * 3
+        .RightWall.Height = HumanRadius * 3
+        .fps.Top = .LeftWall.Height + 8
+        
+        .LeftEnd.Y1 = .LeftWall.Height
+        .RightEnd.Y1 = .RightWall.Height
+        .LeftEnd.X1 = .LeftWall.Width
+        .RightEnd.X1 = .RightWall.Left
+        .LeftEnd.X2 = 0
+        .RightEnd.X2 = .ScaleWidth
+        .LeftEnd.Y2 = SectorRadius * Cos(AngleToRadian(MaxAngle) / 2) + .LeftWall.Height
+        .RightEnd.Y2 = SectorRadius * Cos(AngleToRadian(MaxAngle) / 2) + .LeftWall.Height
+    End With
 End Sub
 
 Private Sub Start_Click()
