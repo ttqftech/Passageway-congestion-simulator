@@ -18,11 +18,11 @@ err:
     isNumeric = False
 End Function
 
-Public Function AngleToRadian(ByVal Angle As Double)        '角度转弧度
+Public Function AngleToRadian(ByVal Angle As Double) As Double      '角度转弧度
     '1° = π/180 * 1 ≈ 0.0174532925199433 rad
     AngleToRadian = Angle * 1.74532925199433E-02
 End Function
-Public Function RadianToAngle(ByVal Radian As Double)       '弧度转角度
+Public Function RadianToAngle(ByVal Radian As Double) As Double     '弧度转角度
     RadianToAngle = Radian * 57.2957795130823
 End Function
 

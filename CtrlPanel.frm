@@ -13,10 +13,19 @@ Begin VB.Form CtrlPanel
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   411
    StartUpPosition =   3  '窗口缺省
+   Begin VB.CommandButton Reset 
+      Caption         =   "重置"
+      Height          =   252
+      Left            =   3720
+      TabIndex        =   15
+      Top             =   1200
+      Visible         =   0   'False
+      Width           =   1092
+   End
    Begin VB.CommandButton Start 
       Caption         =   "开始模拟"
       Default         =   -1  'True
-      Height          =   612
+      Height          =   372
       Left            =   3720
       TabIndex        =   14
       Top             =   840
@@ -68,7 +77,7 @@ Begin VB.Form CtrlPanel
          Left            =   120
          MaxLength       =   3
          TabIndex        =   9
-         Text            =   "5"
+         Text            =   "50"
          Top             =   240
          Width           =   852
       End
@@ -85,7 +94,7 @@ Begin VB.Form CtrlPanel
          Left            =   120
          MaxLength       =   3
          TabIndex        =   7
-         Text            =   "720"
+         Text            =   "640"
          Top             =   240
          Width           =   852
       End
@@ -119,7 +128,7 @@ Begin VB.Form CtrlPanel
          Height          =   264
          Left            =   120
          TabIndex        =   3
-         Text            =   "80"
+         Text            =   "50"
          Top             =   240
          Width           =   852
       End
@@ -284,4 +293,28 @@ End Sub
 
 Private Sub Start_Click()
     Simulator.Start HumanRadius, PsgwayWidth, MaxAngle, SectorRadius, PersonCount, WalkSpeed, ShakeSpeed
+    HumanRadius.Enabled = False
+    PsgwayWidth.Enabled = False
+    MaxAngle.Enabled = False
+    SectorRadius.Enabled = False
+    PersonCount.Enabled = False
+    WalkSpeed.Enabled = False
+    ShakeSpeed.Enabled = False
+    Start.Enabled = False
+    Reset.Enabled = True
 End Sub
+
+Private Sub Reset_Click()
+    Unload Simulator
+    Form_Load
+    HumanRadius.Enabled = True
+    PsgwayWidth.Enabled = True
+    MaxAngle.Enabled = True
+    SectorRadius.Enabled = True
+    PersonCount.Enabled = True
+    WalkSpeed.Enabled = True
+    ShakeSpeed.Enabled = True
+    Start.Enabled = True
+    Reset.Enabled = False
+End Sub
+
