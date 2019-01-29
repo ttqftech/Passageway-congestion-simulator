@@ -15,11 +15,11 @@ Begin VB.Form CtrlPanel
    StartUpPosition =   3  '¥∞ø⁄»± °
    Begin VB.CommandButton Reset 
       Caption         =   "÷ÿ÷√"
+      Enabled         =   0   'False
       Height          =   252
       Left            =   3720
       TabIndex        =   15
       Top             =   1200
-      Visible         =   0   'False
       Width           =   1092
    End
    Begin VB.CommandButton Start 
@@ -43,7 +43,7 @@ Begin VB.Form CtrlPanel
          Left            =   120
          MaxLength       =   3
          TabIndex        =   13
-         Text            =   "0.2"
+         Text            =   "0.5"
          Top             =   240
          Width           =   852
       End

@@ -107,13 +107,12 @@ Private realPoint() As POINT
 Private lastTime As Long
 Private startTime As Long
 
+Private Al As Double, Bl As Double, Cl As Double
+Private Ar As Double, Br As Double, Cr As Double
+
 Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 '    realPoint(0).X = X - SectorRadius * Sin(AngleToRadian(MaxAngle) / 2) - PsgwayWidth / 2
 '    realPoint(0).Y = Y - HumanRadius * 3
-End Sub
-
-Private Sub Form_Unload(Cancel As Integer)
-    End
 End Sub
 
 '初始化
@@ -146,6 +145,16 @@ Public Sub Start(HumanRadius_ As Integer, PsgwayWidth_ As Integer, MaxAngle_ As 
         Person(n).Visible = True
     Next
     refreshDisplay
+    
+    kl = -Atn(AngleToRadian(90 - MaxAngle / 2))
+    Al = kl
+    Bl = -1
+    Cl = -kl * (-PsgwayWidth / 2) + 0    ' C = -ka + b ，这里选用 y 轴为 0 的点
+    kr = Atn(AngleToRadian(90 - MaxAngle / 2))
+    Ar = kr
+    Br = -1
+    Cr = -kr * (PsgwayWidth / 2) + 0    ' C = -ka + b ，这里选用 y 轴为 0 的点
+    
     Mover.Enabled = True
     lastTime = GetTickCount     '搞 fps 的
     startTime = lastTime
@@ -176,7 +185,7 @@ End Sub
 
 '简陋的碰撞检测，返回应该回弹的距离
 Private Function calcForce(ByVal index As Integer) As POINT
-    Dim d As Double                         '临时变量，两球距离和点到直线距离
+    Dim d As Double                        '临时变量，两球距离
     Dim direction As Double, depth As Double
     For i = 1 To UBound(realPoint)          '遍历所有人，找有没有碰的
         If index <> i Then
@@ -191,17 +200,13 @@ Private Function calcForce(ByVal index As Integer) As POINT
         End If
     Next
     'Debug.Print ""
-    Dim A As Double, B As Double, C As Double, k As Double
     '计算左边界，一元一次方程点斜式转一般式算法
-    k = -Atn(AngleToRadian(90 - MaxAngle / 2))
-    A = k
-    B = -1
-    C = -k * (-PsgwayWidth / 2) + 0    ' C = -ka + b ，这里选用 y 轴为 0 的点
-    d = Abs(A * realPoint(index).X + B * realPoint(index).Y + C) / Sqr(A ^ 2 + B ^ 2)       '点到直线距离
-    depth = HumanRadius - d
+    Dim dl As Double
+    dl = Abs(Al * realPoint(index).X + Bl * realPoint(index).Y + Cl) / Sqr(Al ^ 2 + Bl ^ 2)       '点到直线距离
+    depth = HumanRadius - dl
     If depth > 0 Then
-        If realPoint(index).Y - d * Sin(AngleToRadian(MaxAngle / 2)) > 0 Then
-            direction = Atn(1 / -k)         '这里求的是垂线的角度，所以取了相反倒数（不知为何这里有严重误差）
+        If realPoint(index).Y - dl * Sin(AngleToRadian(MaxAngle / 2)) > 0 Then
+            'direction = Atn(1 / -kl)         '这里求的是垂线的角度，所以取了相反倒数（不知为何这里有严重误差）
             direction = AngleToRadian(MaxAngle / 2)
             'Debug.Print ("left_d: " & Round(d, 1) & "  leftAngle: " & RadianToAngle(direction))
             calcForce.X = calcForce.X + Cos(direction) * WalkSpeed * depth * 1
@@ -209,15 +214,12 @@ Private Function calcForce(ByVal index As Integer) As POINT
         End If
     End If
     '计算右边界，一元一次方程点斜式转一般式算法
-    k = Atn(AngleToRadian(90 - MaxAngle / 2))
-    A = k
-    B = -1
-    C = -k * (PsgwayWidth / 2) + 0    ' C = -ka + b ，这里选用 y 轴为 0 的点
-    d = Abs(A * realPoint(index).X + B * realPoint(index).Y + C) / Sqr(A ^ 2 + B ^ 2)       '点到直线距离
-    depth = HumanRadius - d
+    Dim dr As Double
+    dr = Abs(Ar * realPoint(index).X + Br * realPoint(index).Y + Cr) / Sqr(Ar ^ 2 + Br ^ 2)       '点到直线距离
+    depth = HumanRadius - dr
     If depth > 0 Then
-        If realPoint(index).Y - d * Sin(AngleToRadian(MaxAngle / 2)) > 0 Then
-            direction = Atn(1 / -k) + PI    '这里求的是垂线的角度，所以取了倒相反数，由于 tan 特殊性这里加 PI（不知为何这里有严重误差）
+        If realPoint(index).Y - dr * Sin(AngleToRadian(MaxAngle / 2)) > 0 Then
+            'direction = Atn(1 / -kr) + PI    '这里求的是垂线的角度，所以取了倒相反数，由于 tan 特殊性这里加 PI（不知为何这里有严重误差）
             direction = PI - AngleToRadian(MaxAngle / 2)
             'Debug.Print ("right_d: " & Round(d, 1) & "  rightAngle: " & RadianToAngle(direction))
             calcForce.X = calcForce.X + Cos(direction) * WalkSpeed * depth * 1
@@ -267,6 +269,16 @@ Private Sub Mover_Timer()
         deltaTimeSum = deltaTimeSum + deltaTime
     End If
     lastTime = GetTickCount
+    
+    Dim finished As Boolean
+    finished = True
+    For i = 1 To UBound(realPoint)
+        If realPoint(i).Y > 0 Then finished = False: Exit For
+    Next
+    If finished = True Then
+        fps = "Totaltime: " & GetTickCount - startTime
+        Mover.Enabled = False
+    End If
     ReDim nextPoint(UBound(realPoint)) As POINT
     For i = 1 To UBound(realPoint)
         Dim movement As POINT
@@ -274,11 +286,11 @@ Private Sub Mover_Timer()
         nextPoint(i).X = realPoint(i).X + movement.X * speedMultiply  '以 60 fps 为基准
         nextPoint(i).Y = realPoint(i).Y + movement.Y * speedMultiply
         movement = walkForward(i)
-        nextPoint(i).X = nextPoint(i).X + movement.X
-        nextPoint(i).Y = nextPoint(i).Y + movement.Y
+        nextPoint(i).X = nextPoint(i).X + movement.X * speedMultiply  '以 60 fps 为基准
+        nextPoint(i).Y = nextPoint(i).Y + movement.Y * speedMultiply  '以 60 fps 为基准
         movement = walkRandom(i)
-        nextPoint(i).X = nextPoint(i).X + movement.X
-        nextPoint(i).Y = nextPoint(i).Y + movement.Y
+        nextPoint(i).X = nextPoint(i).X + movement.X * speedMultiply  '以 60 fps 为基准
+        nextPoint(i).Y = nextPoint(i).Y + movement.Y * speedMultiply  '以 60 fps 为基准
     Next
     For i = 1 To UBound(realPoint)
         realPoint(i) = nextPoint(i)
